@@ -73,53 +73,26 @@ print(trainUserID.shape)
 print(testUserID.shape)
 
 
-# Also, make vectors of all the movie ids and user ids. These are
-# pandas categorical data, so they range from 1 to n_movies and 1 to n_users, respectively.
-# movieid = ratings.MovieID.cat.codes.values
-
-# trainuserid = ratings.UserID.cat.codes.values
-# print(trainuserid.shape)
-
-# And finally, set up a y variable with the rating,
-# as a one-hot encoded matrix.
-#
-# note the '- 1' for the rating. That's because ratings
-# go from 1 to 5, while the matrix columns go from 0 to 4
-
 # y = np.zeros((ratings.shape[0], 5))
 # y[np.arange(ratings.shape[0]), ratings.Rating - 1] = 1
 y = np.array(ratings.Rating)
 
-# Dummy classifier! Just see how well stupid can do.
-# pred = dummy.DummyClassifier(strategy='prior')
-# pred.fit(ratings[['UserID', 'MovieID']], ratings.Rating)
-
-# print(metrics.mean_absolute_error(ratings.Rating, pred.predict(ratings[['UserID', 'MovieID']])))
-
-# Now, the deep learning classifier
-
-# First, we take the movie and vectorize it.
-# The embedding layer is normally used for sequences (think, sequences of words)
-# so we need to flatten it out.
-# The dropout layer is also important in preventing overfitting
 movie_input = keras.layers.Input(shape=[1])
 movie_vec = keras.layers.Flatten()(keras.layers.Embedding(n_movies + 1, 128)(movie_input))
 movie_vec = keras.layers.Dropout(0.5)(movie_vec)
 
-# Same thing for the users
+# Users
 user_input = keras.layers.Input(shape=[1])
 user_vec = keras.layers.Flatten()(keras.layers.Embedding(n_users + 1,128)(user_input))
 user_vec = keras.layers.Dropout(0.5)(user_vec)
 
-# Then we do the bias vector
+# Bias vector
 movie_bias = keras.layers.Embedding(n_movies + 1, 1, embeddings_initializer = 'random_normal')(movie_input)
 movie_bias = keras.layers.Flatten()(movie_bias)
 user_bias = keras.layers.Embedding(n_users +1 , 1, embeddings_initializer = 'random_normal')(user_input)
 user_bias = keras.layers.Flatten()(user_bias)
 
-
-# Next, we join them all together and put them
-# through a pretty standard deep learning architecture
+# MF
 r_hat = keras.layers.Dot(axes = 1)([ movie_vec, user_vec])
 # r_hat = keras.layers.Add()(r_hat)
 
@@ -128,14 +101,8 @@ opt = optimizers.adam(lr = 0.0003)
 model.compile(opt, loss = 'mean_squared_error')
 model.summary()
 
-# Split the data into train and test sets...
+# Split  data
 a_movieid, b_movieid, a_userid, b_userid, a_y, b_y = cross_validation.train_test_split(trainMovieID, trainUserID, y, test_size=0.05)
-
-# And of _course_ we need to make sure we're improving, so we find the MAE before
-# training at all.
-# metrics.mean_squared_error(np.argmax(b_y, 1)+1, np.argmax(model.predict([b_movieid, b_userid]), 1)+1)
-
-
 
 # earlystopping = EarlyStopping(monitor='val_loss', patience = 20, verbose=1, mode='min')
 # checkpoint = ModelCheckpoint(filepath= str(start_time)+ 'modelfbest.h5',
@@ -169,14 +136,3 @@ with open(str(start_time) + 'result.csv' , "w", newline='') as mFile:
         mFile.write(str(result[i][0]))
         mFile.write("\n")
 
-# This is the number that matters. It's the held out 
-# test set score. Note the + 1, because np.argmax will
-# go from 0 to 4, while our ratings go 1 to 5.
-# print(metrics.mean_squared_error(
-#     np.argmax(b_y, 1)+1, 
-#     np.argmax(model.predict([b_movieid, b_userid]), 1)+1))
-
-# # For comparison's sake, here's the score on the training set.
-# print(metrics.mean_squared_error(
-#     np.argmax(a_y, 1)+1, 
-#     np.argmax(model.predict([a_movieid, a_userid]), 1)+1))

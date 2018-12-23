@@ -49,7 +49,12 @@ Best result: RMSE = 0.86614
 ### Comparison
 Both methods are better than the strong baseline. However, after experimenting different model settings, MF methods almost always beats DNN. Maybe should try RNN next time.
 
-## Visulization
+## Run the code
+```
+./movie_predict.sh $datadir $outputfile
+```
+
+## Visualization
 <img src="https://i.imgur.com/R0NR95T.png">
 
 T-sne components of movie embeddings 
